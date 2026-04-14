@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SONIQ | Premium Music Experience</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --clay-bg: #F0F4F9;
+            --clay-shadow-out: 8px 8px 16px rgba(163, 177, 198, 0.6), -8px -8px 16px rgba(255, 255, 255, 0.8);
+            --clay-shadow-in: inset 6px 6px 12px rgba(163, 177, 198, 0.4), inset -6px -6px 12px rgba(255, 255, 255, 0.9);
+            --clay-shadow-button: 4px 4px 8px rgba(163, 177, 198, 0.5), -4px -4px 8px rgba(255, 255, 255, 0.8);
+            --clay-shadow-button-inset: inset 2px 2px 5px rgba(163, 177, 198, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+            
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            
+            --accent-blue: #0EA5E9;
+            --deep-navy: #1E3A8A;
+            --gold-gradient: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--clay-bg);
+            color: var(--deep-navy);
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* Claymorphism Utilities */
+        .clay-card {
+            background: var(--clay-bg);
+            border-radius: 24px;
+            box-shadow: var(--clay-shadow-out);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .clay-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            box-shadow: var(--clay-shadow-in);
+            pointer-events: none;
+        }
+
+        .clay-button {
+            background: var(--clay-bg);
+            border-radius: 16px;
+            box-shadow: var(--clay-shadow-button);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .clay-button:active {
+            box-shadow: var(--clay-shadow-button-inset);
+            transform: scale(0.96);
+        }
+
+        .clay-button-round {
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+        }
+
+        /* Liquid Glass Utilities */
+        .liquid-glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .liquid-glass::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px rgba(14, 165, 233, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(14, 165, 233, 0.8); }
+            100% { box-shadow: 0 0 5px rgba(14, 165, 233, 0.4); }
+        }
+
+        .glow-active {
+            animation: pulse-glow 2s infinite;
+        }
+
+        /* Navigation Slider Hiding */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Custom Logo Font/Style */
+        .logo-text {
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            color: #1E3A8A; /* Deep Blue */
+            text-shadow: 0 0 1px white;
+        }
+
+        .logo-q {
+            color: #1E3A8A;
+            position: relative;
+            display: inline-block;
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+        }
+
+        .logo-q::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            right: -4px;
+            width: 8px;
+            height: 8px;
+            background: var(--gold-gradient);
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 1);
+        }
+
+        /* Transitions */
+        .page-transition {
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+        }
+
+        .hidden-page {
+            transform: translateY(100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .active-page {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Progress Bar */
+        #progress-container {
+            height: 8px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+        }
+        #progress-bar {
+            height: 100%;
+            background: var(--accent-blue);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        #progress-thumb {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4">
+
+    <!-- HOME SCREEN -->
+    <div id="home-screen" class="w-full max-w-md page-transition active-page pb-24">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8 px-2 mt-4">
+            <div class="flex items-center gap-2">
+                <div class="logo-container flex items-center">
+                    <span class="logo-text text-3xl font-bold uppercase tracking-tighter">SONI<span class="logo-q">Q</span></span>
+                    <div class="ml-2 w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-sm border border-blue-100">
+                        <i data-lucide="music-2" class="w-5 h-5 text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <label for="file-upload" class="clay-button p-3 rounded-full cursor-pointer">
+                    <i data-lucide="plus" class="w-5 h-5 text-blue-600"></i>
+                    <input type="file" id="file-upload" class="hidden" accept="audio/*" multiple>
+                </label>
+                <div class="clay-button p-3 rounded-full">
+                    <i data-lucide="search" class="w-5 h-5 opacity-60"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="clay-card mb-8 px-4 py-3 flex items-center gap-3">
+            <i data-lucide="search" class="w-5 h-5 opacity-40"></i>
+            <input type="text" placeholder="Search vibes..." class="bg-transparent border-none outline-none w-full text-sm font-medium opacity-70">
+        </div>
+
+        <!-- Albums Section -->
+        <section class="mb-8">
+            <h2 class="text-xl font-bold mb-4 px-2 opacity-80">Albums</h2>
+            <div id="album-list" class="flex gap-6 overflow-x-auto no-scrollbar py-4 px-2">
+                <!-- Albums populated by JS -->
+            </div>
+        </section>
+
+        <!-- All Songs Section -->
+        <section>
+            <h2 class="text-xl font-bold mb-4 px-2 opacity-80">All Songs</h2>
+            <div id="song-list" class="flex flex-col gap-4 px-2">
+                <!-- Songs populated by JS -->
+            </div>
+        </section>
+    </div>
+
+    <!-- PLAYER SCREEN -->
+    <div id="player-screen" class="fixed inset-0 z-50 bg-white page-transition hidden-page flex flex-col p-6 overflow-hidden">
+        <!-- Background Blur -->
+        <div id="player-bg" class="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 opacity-20 scale-110 blur-2xl"></div>
+        
+        <!-- Header -->
+        <div class="relative z-10 flex justify-between items-center mb-8">
+            <div id="back-button" class="clay-button clay-button-round">
+                <i data-lucide="chevron-down" class="w-6 h-6"></i>
+            </div>
+            <div class="text-center">
+                <p class="text-[10px] uppercase tracking-widest font-bold opacity-40">Now Playing</p>
+                <p id="now-playing-label" class="text-xs font-bold opacity-70">SONIQ Player</p>
+            </div>
+            <div class="clay-button clay-button-round">
+                <i data-lucide="more-vertical" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- Album Art Container -->
+        <div class="relative z-10 flex-grow flex flex-col items-center justify-center py-6">
+            <div class="clay-card w-full aspect-square max-w-[300px] overflow-hidden p-3 relative">
+                <div class="liquid-glass w-full h-full p-2 overflow-hidden">
+                    <img id="player-art" src="" alt="Album Art" class="w-full h-full object-cover rounded-[18px]">
+                </div>
+                <div class="absolute -right-4 -bottom-4 w-12 h-12 bg-teal-400 rounded-full blur-xl opacity-40"></div>
+                <div class="absolute -left-4 -top-4 w-12 h-12 bg-blue-400 rounded-full blur-xl opacity-40"></div>
+            </div>
+            
+            <div class="text-center mt-10">
+                <h1 id="player-title" class="text-2xl font-bold mb-2 tracking-tight">Song Title</h1>
+                <p id="player-artist" class="text-blue-500 font-medium opacity-80">Artist Name</p>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="relative z-10 w-full mb-8 pt-4">
+            <div id="progress-container" class="liquid-glass h-2 border-none">
+                <div id="progress-bar"></div>
+                <div id="progress-thumb"></div>
+            </div>
+            <div class="flex justify-between mt-3 text-[10px] font-bold opacity-40 px-1">
+                <span id="current-time">0:00</span>
+                <span id="duration">3:45</span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="relative z-10 flex flex-col gap-8 mb-10">
+            <!-- Main Controls -->
+            <div class="flex justify-between items-center px-4">
+                <div id="shuffle-btn" class="clay-button p-4 rounded-full">
+                    <i data-lucide="shuffle" class="w-5 h-5 opacity-40"></i>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div id="prev-btn" class="clay-button p-5 rounded-full">
+                        <i data-lucide="skip-back" class="w-6 h-6"></i>
+                    </div>
+                    <div id="play-btn" class="clay-button p-7 rounded-full bg-blue-600 text-white relative">
+                        <i data-lucide="play" class="w-8 h-8 fill-current translate-x-1"></i>
+                    </div>
+                    <div id="next-btn" class="clay-button p-5 rounded-full">
+                        <i data-lucide="skip-forward" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div id="repeat-btn" class="clay-button p-4 rounded-full">
+                    <i data-lucide="repeat" class="w-5 h-5 opacity-40"></i>
+                </div>
+            </div>
+
+            <!-- Extra Controls -->
+            <div class="flex justify-around items-center opacity-60">
+                <i data-lucide="heart" class="w-6 h-6 cursor-pointer hover:text-red-500 transition-colors"></i>
+                <i data-lucide="list-music" class="w-6 h-6 cursor-pointer"></i>
+                <div id="lyrics-toggle" class="px-3 py-1 rounded-full border border-blue-200 text-[10px] font-bold cursor-pointer">LYRICS</div>
+                <i data-lucide="share-2" class="w-6 h-6 cursor-pointer"></i>
+            </div>
+        </div>
+
+        <!-- Volume -->
+        <div class="relative z-10 flex items-center gap-4 px-4 opacity-50">
+            <i data-lucide="volume-1" class="w-4 h-4"></i>
+            <div class="flex-grow h-1 liquid-glass border-none">
+                <div id="volume-bar" class="h-full bg-blue-400 w-3/4 rounded-full"></div>
+            </div>
+            <i data-lucide="volume-2" class="w-4 h-4"></i>
+        </div>
+    </div>
+
+    <!-- MINI PLAYER (Float on Home) -->
+    <div id="mini-player" class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-40 liquid-glass p-3 border-blue-100 flex items-center gap-3 transition-all duration-300 translate-y-24 opacity-0 pointer-events-none">
+        <img id="mini-art" src="" alt="" class="w-12 h-12 rounded-xl object-cover shadow-lg">
+        <div class="flex-grow min-w-0">
+            <p id="mini-title" class="text-xs font-bold truncate">Song Title</p>
+            <p id="mini-artist" class="text-[10px] opacity-60 truncate">Artist Name</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <div id="mini-play-btn" class="clay-button w-10 h-10 rounded-full">
+                <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+            </div>
+            <div id="mini-close" class="p-1 opacity-40 hover:opacity-100">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- LYRICS MODAL -->
+    <div id="lyrics-modal" class="fixed inset-0 z-[60] bg-black bg-opacity-80 flex items-end opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="w-full h-[80%] liquid-glass rounded-t-[40px] bg-blue-900 border-none p-8 flex flex-col text-white transform translate-y-full transition-transform duration-300">
+            <div class="w-12 h-1 bg-white opacity-20 rounded-full mx-auto mb-8"></div>
+            <div id="lyrics-content" class="flex-grow overflow-y-auto no-scrollbar text-lg font-medium opacity-50 space-y-6 text-center">
+                <!-- Lyrics populated by JS -->
+            </div>
+            <div id="close-lyrics" class="clay-button bg-white text-blue-900 mt-6 py-4 font-bold rounded-2xl">Close Lyrics</div>
+        </div>
+    </div>
+
+    <script>
+        // Initialization
+        lucide.createIcons();
+
+        // 12 Mock Songs (Punjabi/Bollywood)
+        const defaultSongs = [
+            { id: 1, title: "Lover", artist: "Diljit Dosanjh", album: "MoonChild Era", duration: "3:30", art: "https://picsum.photos/seed/lover/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", type: 'default' },
+            { id: 2, title: "Kesariya", artist: "Arijit Singh", album: "Brahmastra", duration: "4:28", art: "https://picsum.photos/seed/kesar/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", type: 'default' },
+            { id: 3, title: "Excuses", artist: "AP Dhillon", album: "Hidden Gems", duration: "2:56", art: "https://picsum.photos/seed/ap/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", type: 'default' },
+            { id: 4, title: "Proper Patola", artist: "Diljit Dosanjh", album: "ROAR", duration: "3:10", art: "https://picsum.photos/seed/patola/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", type: 'default' },
+            { id: 5, title: "Tum Hi Ho", artist: "Arijit Singh", album: "Aashiqui 2", duration: "4:22", art: "https://picsum.photos/seed/arijit/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3", type: 'default' },
+            { id: 6, title: "Amplifier", artist: "Imran Khan", album: "Unforgettable", duration: "3:52", art: "https://picsum.photos/seed/imran/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3", type: 'default' },
+            { id: 7, title: "295", artist: "Sidhu Moose Wala", album: "Moosetape", duration: "4:30", art: "https://picsum.photos/seed/sidhu/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3", type: 'default' },
+            { id: 8, title: "Pasoori", artist: "Ali Sethi", album: "Coke Studio", duration: "3:44", art: "https://picsum.photos/seed/pasoori/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3", type: 'default' },
+            { id: 9, title: "Challa", artist: "Gurdas Maan", album: "Legend", duration: "5:05", art: "https://picsum.photos/seed/maan/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3", type: 'default' },
+            { id: 10, title: "G.O.A.T", artist: "Diljit Dosanjh", album: "G.O.A.T", duration: "3:43", art: "https://picsum.photos/seed/goat/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3", type: 'default' },
+            { id: 11, title: "Raataan Lambiyan", artist: "Jubin Nautiyal", album: "Shershaah", duration: "3:50", art: "https://picsum.photos/seed/shersh/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3", type: 'default' },
+            { id: 12, title: "Aali Re", artist: "Shreya Ghoshal", album: "Bajirao", duration: "4:15", art: "https://picsum.photos/seed/shreya/400", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3", type: 'default' },
+        ];
+
+        let songs = [...defaultSongs];
+        let currentSongIndex = 0;
+        let isPlaying = false;
+        let isShuffle = false;
+        let repeatMode = 'none';
+        const audio = new Audio();
+
+        // IndexedDB Manager
+        const SoniqDB = {
+            name: 'SoniqLibrary',
+            version: 1,
+            init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('tracks')) {
+                            db.createObjectStore('tracks', { keyPath: 'id', autoIncrement: true });
+                        }
+                    };
+                    request.onsuccess = (e) => resolve(e.target.result);
+                    request.onerror = (e) => reject(e.target.error);
+                });
+            },
+            async addTrack(track) {
+                const db = await this.init();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction('tracks', 'readwrite');
+                    const store = tx.objectStore('tracks');
+                    store.add(track);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error);
+                });
+            },
+            async getAllTracks() {
+                const db = await this.init();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction('tracks', 'readonly');
+                    const store = tx.objectStore('tracks');
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            },
+            async deleteTrack(id) {
+                const db = await this.init();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction('tracks', 'readwrite');
+                    const store = tx.objectStore('tracks');
+                    store.delete(id);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error);
+                });
+            }
+        };
+
+        // Elements
+        const homeScreen = document.getElementById('home-screen');
+        const playerScreen = document.getElementById('player-screen');
+        const songList = document.getElementById('song-list');
+        const albumList = document.getElementById('album-list');
+        const playBtn = document.getElementById('play-btn');
+        const miniPlayer = document.getElementById('mini-player');
+
+        async function loadLibrary() {
+            const savedTracks = await SoniqDB.getAllTracks();
+            songs = [...defaultSongs, ...savedTracks.map(t => ({
+                ...t,
+                url: URL.createObjectURL(t.blob),
+                type: 'local'
+            }))];
+            renderHome();
+        }
+
+        function renderHome() {
+            const uniqueAlbums = songs.filter((s, i) => i < 5);
+            albumList.innerHTML = uniqueAlbums.map(song => `
+                <div class="clay-card min-w-[160px] p-3 flex flex-col gap-3 cursor-pointer transform hover:scale-105 transition-transform" onclick="playSongById(${song.id}, '${song.type}')">
+                    <img src="${song.art}" class="w-full aspect-square rounded-2xl object-cover">
+                    <div>
+                        <p class="text-xs font-bold truncate">${song.album}</p>
+                        <p class="text-[10px] opacity-40 truncate">${song.artist}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            songList.innerHTML = songs.map((song, i) => `
+                <div class="clay-card p-3 flex items-center gap-4 cursor-pointer hover:bg-blue-50 transition-colors" onclick="playSong(${i})">
+                    <div class="relative w-12 h-12">
+                        <img src="${song.art}" class="w-full h-full rounded-xl object-cover">
+                        <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-xl opacity-0 hover:opacity-100">
+                            <i data-lucide="play" class="w-4 h-4 text-white fill-current"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <p class="text-sm font-bold truncate">${song.title}</p>
+                        <p class="text-xs opacity-40 truncate">${song.artist}</p>
+                    </div>
+                    <span class="text-[10px] font-bold opacity-30">${song.duration}</span>
+                    ${song.type === 'local' ? `
+                        <div class="clay-button w-8 h-8 rounded-full bg-red-50 text-red-400" onclick="removeTrack(event, ${song.id})">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </div>
+                    ` : `
+                        <div class="clay-button w-8 h-8 rounded-full">
+                            <i data-lucide="more-horizontal" class="w-4 h-4 opacity-40"></i>
+                        </div>
+                    `}
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        async function removeTrack(e, id) {
+            e.stopPropagation();
+            if (confirm("Remove this track from SONIQ?")) {
+                await SoniqDB.deleteTrack(id);
+                loadLibrary();
+            }
+        }
+
+        function playSong(index) {
+            currentSongIndex = index;
+            const song = songs[currentSongIndex];
+            audio.src = song.url;
+            updatePlayerUI(song);
+            homeScreen.classList.remove('active-page');
+            homeScreen.classList.add('hidden-page');
+            playerScreen.classList.add('active-page');
+            playerScreen.classList.remove('hidden-page');
+            audio.play();
+            isPlaying = true;
+            updatePlayIcon();
+            showMiniPlayer();
+        }
+
+        function playSongById(id, type) {
+            const index = songs.findIndex(s => s.id === id && s.type === type);
+            if (index !== -1) playSong(index);
+        }
+
+        function togglePlay() {
+            if (isPlaying) { audio.pause(); isPlaying = false; }
+            else { audio.play(); isPlaying = true; }
+            updatePlayIcon();
+        }
+
+        function updatePlayIcon() {
+            const icon = isPlaying ? 'pause' : 'play';
+            playBtn.innerHTML = `<i data-lucide="${icon}" class="w-8 h-8 fill-current ${icon === 'play' ? 'translate-x-1' : ''}"></i>`;
+            document.getElementById('mini-play-btn').innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 fill-current"></i>`;
+            isPlaying ? playBtn.classList.add('glow-active') : playBtn.classList.remove('glow-active');
+            lucide.createIcons();
+        }
+
+        function updatePlayerUI(song) {
+            document.getElementById('player-title').innerText = song.title;
+            document.getElementById('player-artist').innerText = song.artist;
+            document.getElementById('player-art').src = song.art;
+            document.getElementById('player-bg').style.backgroundImage = `url(${song.art})`;
+            document.getElementById('duration').innerText = song.duration;
+            document.getElementById('mini-title').innerText = song.title;
+            document.getElementById('mini-artist').innerText = song.artist;
+            document.getElementById('mini-art').src = song.art;
+        }
+
+        function nextSong() {
+            isShuffle ? currentSongIndex = Math.floor(Math.random() * songs.length) : currentSongIndex = (currentSongIndex + 1) % songs.length;
+            playSong(currentSongIndex);
+        }
+
+        function prevSong() {
+            currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+            playSong(currentSongIndex);
+        }
+
+        audio.addEventListener('timeupdate', () => {
+            const progress = (audio.currentTime / audio.duration) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+            document.getElementById('progress-thumb').style.left = progress + '%';
+            const curMin = Math.floor(audio.currentTime / 60);
+            const curSec = Math.floor(audio.currentTime % 60);
+            document.getElementById('current-time').innerText = `${curMin}:${curSec < 10 ? '0' : ''}${curSec}`;
+        });
+
+        audio.addEventListener('ended', () => {
+            repeatMode === 'one' ? (audio.currentTime = 0, audio.play()) : nextSong();
+        });
+
+        playBtn.addEventListener('click', togglePlay);
+        document.getElementById('mini-play-btn').addEventListener('click', togglePlay);
+        document.getElementById('next-btn').addEventListener('click', nextSong);
+        document.getElementById('prev-btn').addEventListener('click', prevSong);
+        document.getElementById('back-button').addEventListener('click', () => {
+            playerScreen.classList.remove('active-page');
+            playerScreen.classList.add('hidden-page');
+            homeScreen.classList.add('active-page');
+            homeScreen.classList.remove('hidden-page');
+        });
+        document.getElementById('progress-container').addEventListener('click', (e) => {
+            const width = e.target.clientWidth;
+            const clickX = e.offsetX;
+            audio.currentTime = (clickX / width) * audio.duration;
+        });
+
+        function showMiniPlayer() {
+            miniPlayer.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+            miniPlayer.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+        }
+
+        document.getElementById('mini-close').addEventListener('click', (e) => {
+            e.stopPropagation();
+            miniPlayer.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+        });
+
+        miniPlayer.addEventListener('click', () => {
+            homeScreen.classList.add('hidden-page');
+            playerScreen.classList.add('active-page');
+            playerScreen.classList.remove('hidden-page');
+        });
+
+        const fakeLyricsMap = {
+            1: ["Hasse tan taithon ne", "Mukhde ton kithon ne", "Changi tu lagge mainu", "Das kithe rakha tainu", "Lover... yeah!"],
+            2: ["Mujhko itna bataye koi", "Kaise tujhse dil na lagaye koi", "Rabba ne tujhko banane me", "Kar di hai husn ki khaali tijoriyaan"],
+            default: ["Music is life...", "SONIQ vibes only.", "Experience the claymorphism.", "Liquid glass feel.", "Enjoy the sound..."]
+        };
+
+        document.getElementById('lyrics-toggle').addEventListener('click', () => {
+            const song = songs[currentSongIndex];
+            const lyrics = fakeLyricsMap[song.id] || fakeLyricsMap.default;
+            document.getElementById('lyrics-content').innerHTML = lyrics.map(line => `<p class="py-2 hover:opacity-100 transition-opacity cursor-default">${line}</p>`).join('');
+            document.getElementById('lyrics-modal').classList.remove('pointer-events-none', 'opacity-0');
+            document.getElementById('lyrics-modal').children[0].classList.remove('translate-y-full');
+        });
+
+        document.getElementById('close-lyrics').addEventListener('click', () => {
+            document.getElementById('lyrics-modal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('lyrics-modal').children[0].classList.add('translate-y-full');
+        });
+
+        document.getElementById('shuffle-btn').addEventListener('click', function() {
+            isShuffle = !isShuffle;
+            this.style.background = isShuffle ? 'var(--accent-blue)' : 'var(--clay-bg)';
+            this.style.color = isShuffle ? 'white' : 'inherit';
+            this.querySelector('i').style.opacity = isShuffle ? '1' : '0.4';
+        });
+
+        document.getElementById('repeat-btn').addEventListener('click', function() {
+            if (repeatMode === 'none') repeatMode = 'all';
+            else if (repeatMode === 'all') repeatMode = 'one';
+            else repeatMode = 'none';
+            this.style.background = repeatMode !== 'none' ? 'var(--accent-blue)' : 'var(--clay-bg)';
+            this.style.color = repeatMode !== 'none' ? 'white' : 'inherit';
+            this.querySelector('i').style.opacity = repeatMode !== 'none' ? '1' : '0.4';
+            this.innerHTML = `<i data-lucide="${repeatMode === 'one' ? 'repeat-1' : 'repeat'}" class="w-5 h-5"></i>`;
+            lucide.createIcons();
+        });
+
+        // Updated File Upload with IndexedDB persistence
+        const fileUpload = document.getElementById('file-upload');
+        fileUpload.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            for (const file of files) {
+                const tempAudio = new Audio(URL.createObjectURL(file));
+                await new Promise(r => tempAudio.addEventListener('loadedmetadata', r));
+                const min = Math.floor(tempAudio.duration / 60);
+                const sec = Math.floor(tempAudio.duration % 60);
+                
+                const trackData = {
+                    title: file.name.replace(/\.[^/.]+$/, ""),
+                    artist: "Local Device",
+                    album: "Imported",
+                    duration: `${min}:${sec < 10 ? '0' : ''}${sec}`,
+                    art: "https://picsum.photos/seed/" + Math.random() + "/400",
+                    blob: file
+                };
+                await SoniqDB.addTrack(trackData);
+            }
+            loadLibrary();
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-10 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full z-[100] shadow-xl animate-bounce';
+            toast.innerText = `Added to Local Library!`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        });
+
+        // Initialize App
+        loadLibrary();
+    </script>
+</body>
+</html>
