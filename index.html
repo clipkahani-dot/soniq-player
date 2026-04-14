@@ -145,14 +145,6 @@
         <div class="flex items-center gap-2"><div id="mini-play-btn" class="clay-button w-10 h-10 rounded-full"><i data-lucide="play" class="w-4 h-4 fill-current text-blue-600"></i></div><div id="mini-close" class="p-1 opacity-40"><i data-lucide="x" class="w-4 h-4"></i></div></div>
     </div>
 
-    <div id="lyrics-modal" class="fixed inset-0 z-[60] bg-black bg-opacity-80 flex items-end opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="w-full h-[80%] liquid-glass rounded-t-[40px] bg-blue-900 border-none p-8 flex flex-col text-white transform translate-y-full transition-transform duration-300">
-            <div class="w-12 h-1 bg-white opacity-20 rounded-full mx-auto mb-8"></div>
-            <div id="lyrics-content" class="flex-grow overflow-y-auto no-scrollbar text-lg font-medium opacity-50 space-y-6 text-center"></div>
-            <div id="close-lyrics" class="clay-button bg-white text-blue-900 mt-6 py-4 font-bold rounded-2xl">Close Lyrics</div>
-        </div>
-    </div>
-
     <script>
         lucide.createIcons();
         const defaultSongs = [
@@ -173,6 +165,7 @@
         let songs = [...defaultSongs];
         let favorites = JSON.parse(localStorage.getItem('soniq_favorites') || '[]');
         let currentPlaylist = [...songs];
+        let renderedList = [...songs];
         let currentSongIndex = 0;
         let isPlaying = false;
         let isShuffle = false;
@@ -213,20 +206,10 @@
                     request.onsuccess = () => resolve(request.result);
                     request.onerror = () => reject(request.error);
                 });
-            },
-            async deleteTrack(id) {
-                const db = await this.init();
-                return new Promise((resolve, reject) => {
-                    const tx = db.transaction('tracks', 'readwrite');
-                    const store = tx.objectStore('tracks');
-                    store.delete(id);
-                    tx.oncomplete = () => resolve();
-                    tx.onerror = () => reject(tx.error);
-                });
             }
         };
 
-        const homeTab = document.getElementById('home-tab'), searchTab = document.getElementById('search-tab'), libraryTab = document.getElementById('library-tab'), playerScreen = document.getElementById('player-screen'), albumList = document.getElementById('album-list'), songList = document.getElementById('song-list'), libraryList = document.getElementById('library-list'), playBtn = document.getElementById('play-btn'), miniPlayer = document.getElementById('mini-player');
+        const playerScreen = document.getElementById('player-screen'), albumList = document.getElementById('album-list'), songList = document.getElementById('song-list'), libraryList = document.getElementById('library-list'), playBtn = document.getElementById('play-btn'), miniPlayer = document.getElementById('mini-player');
 
         async function loadLibrary() {
             const savedTracks = await SoniqDB.getAllTracks();
@@ -235,9 +218,11 @@
         }
 
         function renderAll() { renderHome(); renderLibrary(); renderSearch(); }
+
         function renderHome() {
-            albumList.innerHTML = songs.slice(0, 5).map(song => `<div class="clay-card min-w-[160px] p-3 flex flex-col gap-3 transform hover:scale-105 transition-transform" onclick="playSongById(${song.id}, '${song.type}')"><img src="${song.art}" class="w-full aspect-square rounded-2xl object-cover"><div><p class="text-xs font-bold truncate">${song.album}</p><p class="text-[10px] opacity-40 truncate">${song.artist}</p></div></div>`).join('');
-            songList.innerHTML = songs.map((song, i) => renderSongRow(song, i, songs)).join('');
+            albumList.innerHTML = songs.slice(0, 5).map(song => `<div class="clay-card min-w-[160px] p-3 flex flex-col gap-3 transform hover:scale-105 transition-transform" onclick="playSongById('${song.id}', '${song.type}')"><img src="${song.art}" class="w-full aspect-square rounded-2xl object-cover"><div><p class="text-xs font-bold truncate">${song.album}</p><p class="text-[10px] opacity-40 truncate">${song.artist}</p></div></div>`).join('');
+            renderedList = [...songs];
+            songList.innerHTML = songs.map((song, i) => renderSongRow(song, i)).join('');
             lucide.createIcons();
         }
 
@@ -245,39 +230,39 @@
             let filtered = songs;
             if (libraryFilter === 'favorites') filtered = songs.filter(s => isFav(s));
             if (libraryFilter === 'imported') filtered = songs.filter(s => s.type === 'local');
-            libraryList.innerHTML = filtered.length ? filtered.map((song, i) => renderSongRow(song, i, filtered)).join('') : `<div class="text-center py-20 opacity-30 px-6"><p class="font-bold">Nothing here yet!</p></div>`;
+            renderedList = [...filtered];
+            libraryList.innerHTML = filtered.length ? filtered.map((song, i) => renderSongRow(song, i)).join('') : `<div class="text-center py-20 opacity-30 px-6"><p class="font-bold">Nothing here yet!</p></div>`;
             lucide.createIcons();
         }
 
         function renderSearch() {
             const q = document.getElementById('search-input').value.toLowerCase();
-            if (!q) return;
+            if (!q) { document.getElementById('search-results').innerHTML = `<div class="text-center py-20 opacity-30"><i data-lucide="music" class="w-12 h-12 mx-auto mb-4"></i><p class="font-bold">Find your next vibe</p></div>`; lucide.createIcons(); return; }
             const results = songs.filter(s => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
-            document.getElementById('search-results').innerHTML = results.length ? results.map((song, i) => renderSongRow(song, i, results)).join('') : `<div class="text-center py-20 opacity-30"><p class="font-bold">No matches found</p></div>`;
+            renderedList = [...results];
+            document.getElementById('search-results').innerHTML = results.length ? results.map((song, i) => renderSongRow(song, i)).join('') : `<div class="text-center py-20 opacity-30"><p class="font-bold">No matches found</p></div>`;
             lucide.createIcons();
         }
 
-        function renderSongRow(song, index, list) {
-            const listId = JSON.stringify(list.map(s => s.id + s.type));
-            return `<div class="clay-card p-3 flex items-center gap-4 hover:bg-white transition-colors" onclick="playFromList(${index}, '${btoa(listId)}')"><div class="relative w-12 h-12"><img src="${song.art}" class="w-full h-full rounded-xl object-cover"><div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-xl opacity-0 hover:opacity-100"><i data-lucide="play" class="w-4 h-4 text-white fill-current"></i></div></div><div class="flex-grow min-w-0"><p class="text-sm font-bold truncate">${song.title}</p><p class="text-xs opacity-40 truncate">${song.artist}</p></div><div class="flex items-center gap-3"><i data-lucide="heart" class="w-4 h-4 ${isFav(song) ? 'text-red-500 fill-red-500' : 'opacity-20'}"></i><span class="text-[10px] font-bold opacity-30">${song.duration}</span></div></div>`;
+        function renderSongRow(song, index) {
+            return `<div class="clay-card p-3 flex items-center gap-4 hover:bg-white transition-colors" onclick="playFromRendered(${index})"><div class="relative w-12 h-12"><img src="${song.art}" class="w-full h-full rounded-xl object-cover"><div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 rounded-xl opacity-0 hover:opacity-100"><i data-lucide="play" class="w-4 h-4 text-white fill-current"></i></div></div><div class="flex-grow min-w-0"><p class="text-sm font-bold truncate">${song.title}</p><p class="text-xs opacity-40 truncate">${song.artist}</p></div><div class="flex items-center gap-3"><i data-lucide="heart" class="w-4 h-4 ${isFav(song) ? 'text-red-500 fill-red-500' : 'opacity-20'}"></i><span class="text-[10px] font-bold opacity-30">${song.duration}</span></div></div>`;
         }
 
-        function isFav(song) { return favorites.some(f => f.id === song.id && f.type === song.type); }
+        function isFav(song) { return favorites.some(f => String(f.id) === String(song.id) && f.type === song.type); }
 
-        function playFromList(index, listData) {
-            const list = JSON.parse(atob(listData));
-            currentPlaylist = songs.filter(s => list.includes(s.id + s.type));
-            currentSongIndex = index;
-            playSong(currentPlaylist[currentSongIndex]);
-        }
+        function playFromRendered(index) { currentPlaylist = [...renderedList]; currentSongIndex = index; playSong(currentPlaylist[currentSongIndex]); }
 
         function playSong(song) {
+            if (!song) return;
             audio.src = song.url; updatePlayerUI(song);
             playerScreen.classList.remove('hidden-page'); playerScreen.classList.add('active-page');
             audio.play(); isPlaying = true; updatePlayIcon(); showMiniPlayer();
         }
 
-        function playSongById(id, type) { playSong(songs.find(s => s.id === id && s.type === type)); }
+        function playSongById(id, type) { 
+            const song = songs.find(s => String(s.id) === String(id) && s.type === type);
+            if (song) { currentPlaylist = [song]; currentSongIndex = 0; playSong(song); }
+        }
 
         function setLibraryFilter(filter) {
             libraryFilter = filter;
@@ -287,47 +272,55 @@
 
         function updatePlayerUI(song) {
             document.getElementById('player-title').innerText = song.title; document.getElementById('player-artist').innerText = song.artist; document.getElementById('player-art').src = song.art; document.getElementById('player-bg').style.backgroundImage = `url(${song.art})`; document.getElementById('duration').innerText = song.duration; document.getElementById('mini-title').innerText = song.title; document.getElementById('mini-artist').innerText = song.artist; document.getElementById('mini-art').src = song.art;
-            const favIcon = document.getElementById('fav-btn').querySelector('i');
-            if (isFav(song)) { favIcon.classList.add('text-red-500', 'fill-red-500'); favIcon.classList.remove('text-gray-400'); }
-            else { favIcon.classList.remove('text-red-500', 'fill-red-500'); favIcon.classList.add('text-gray-400'); }
+            const favBtn = document.getElementById('fav-btn');
+            favBtn.innerHTML = isFav(song) ? '<i data-lucide="heart" class="w-6 h-6 text-red-500 fill-red-500"></i>' : '<i data-lucide="heart" class="w-6 h-6 text-gray-400"></i>';
             lucide.createIcons();
         }
 
         function switchTab(tab, el) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); document.getElementById(tab + '-tab').classList.add('active'); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active');
-            if (tab === 'library') renderLibrary();
+            if (tab === 'library') renderLibrary(); if (tab === 'home') renderHome();
         }
 
-        function togglePlay() { isPlaying ? (audio.pause(), isPlaying = false) : (audio.play(), isPlaying = true); updatePlayIcon(); }
-        function updatePlayIcon() { const icon = isPlaying ? 'pause' : 'play'; playBtn.innerHTML = `<i data-lucide="${icon}" class="w-8 h-8 fill-current ${icon === 'play' ? 'translate-x-1' : ''}"></i>`; document.getElementById('mini-play-btn').innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 fill-current"></i>`; (isPlaying ? playBtn.classList.add('glow-active') : playBtn.classList.remove('glow-active')); lucide.createIcons(); }
+        function togglePlay() { if (audio.paused) { audio.play(); isPlaying = true; } else { audio.pause(); isPlaying = false; } updatePlayIcon(); }
+
+        function updatePlayIcon() { 
+            const icon = isPlaying ? 'pause' : 'play'; 
+            playBtn.innerHTML = `<i data-lucide="${icon}" class="w-8 h-8 fill-current ${icon === 'play' ? 'translate-x-1' : ''}"></i>`; 
+            document.getElementById('mini-play-btn').innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 fill-current"></i>`; 
+            if (isPlaying) playBtn.classList.add('glow-active'); else playBtn.classList.remove('glow-active');
+            lucide.createIcons(); 
+        }
         
         function nextSong() {
+            if (currentPlaylist.length === 0) return;
             if (isShuffle) currentSongIndex = Math.floor(Math.random() * currentPlaylist.length);
             else currentSongIndex = (currentSongIndex + 1) % currentPlaylist.length;
             playSong(currentPlaylist[currentSongIndex]);
         }
-        function prevSong() { currentSongIndex = (currentSongIndex - 1 + currentPlaylist.length) % currentPlaylist.length; playSong(currentPlaylist[currentSongIndex]); }
+        function prevSong() { if (currentPlaylist.length === 0) return; currentSongIndex = (currentSongIndex - 1 + currentPlaylist.length) % currentPlaylist.length; playSong(currentPlaylist[currentSongIndex]); }
 
         audio.addEventListener('timeupdate', () => {
             const progress = (audio.currentTime / audio.duration) * 100; document.getElementById('progress-bar').style.width = progress + '%'; document.getElementById('progress-thumb').style.left = progress + '%';
             const curMin = Math.floor(audio.currentTime / 60), curSec = Math.floor(audio.currentTime % 60); document.getElementById('current-time').innerText = `${curMin}:${curSec < 10 ? '0' : ''}${curSec}`;
         });
-        audio.addEventListener('ended', () => { repeatMode === 'one' ? (audio.currentTime = 0, audio.play()) : nextSong(); });
+        audio.addEventListener('ended', () => { if (repeatMode === 'one') { audio.currentTime = 0; audio.play(); } else nextSong(); });
 
         document.getElementById('fav-btn').addEventListener('click', () => {
             const song = currentPlaylist[currentSongIndex];
-            if (isFav(song)) favorites = favorites.filter(f => !(f.id === song.id && f.type === song.type));
+            if (!song) return;
+            if (isFav(song)) favorites = favorites.filter(f => !(String(f.id) === String(song.id) && f.type === song.type));
             else favorites.push({ id: song.id, type: song.type });
             localStorage.setItem('soniq_favorites', JSON.stringify(favorites));
             updatePlayerUI(song); renderAll();
         });
 
         document.getElementById('search-input').addEventListener('input', renderSearch);
-        document.getElementById('back-button').addEventListener('click', () => playerScreen.classList.remove('active-page', 'active'));
+        document.getElementById('back-button').addEventListener('click', () => playerScreen.classList.remove('active-page'));
         playBtn.addEventListener('click', togglePlay); document.getElementById('mini-play-btn').addEventListener('click', togglePlay); document.getElementById('next-btn').addEventListener('click', nextSong); document.getElementById('prev-btn').addEventListener('click', prevSong);
-        document.getElementById('progress-container').addEventListener('click', e => audio.currentTime = (e.offsetX / e.target.clientWidth) * audio.duration);
-        document.getElementById('mini-close').addEventListener('click', e => { e.stopPropagation(); miniPlayer.classList.add('translate-y-24', 'opacity-0'); });
-        miniPlayer.addEventListener('click', () => playerScreen.classList.add('active-page'));
+        document.getElementById('progress-container').addEventListener('click', e => audio.currentTime = (e.offsetX / e.currentTarget.clientWidth) * audio.duration);
+        document.getElementById('mini-close').addEventListener('click', e => { e.stopPropagation(); miniPlayer.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none'); });
+        miniPlayer.addEventListener('click', () => { playerScreen.classList.add('active-page'); playerScreen.classList.remove('hidden-page'); });
         function showMiniPlayer() { miniPlayer.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none'); miniPlayer.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto'); }
 
         const fileUpload = document.getElementById('file-upload');
